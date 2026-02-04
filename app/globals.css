@@ -48,7 +48,7 @@ body {
 
 /* Glassmorphism utility */
 .glass {
-  background: rgba(var(--background), 0.7);
+  background: rgba(var(--background), 0.5);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }

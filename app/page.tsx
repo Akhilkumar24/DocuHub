@@ -114,7 +114,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1, duration: 0.5 }}
                 viewport={{ once: true }}
-                className="group relative rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md dark:bg-zinc-900/50"
+                className="group relative rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <feature.icon className="h-6 w-6" />

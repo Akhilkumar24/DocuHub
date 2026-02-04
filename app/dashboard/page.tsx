@@ -11,14 +11,18 @@ function ToolCard({ icon: Icon, title, description, href, disabled }: any) {
   return (
     <Link 
       href={disabled ? "#" : href} 
-      className={`group block h-full space-y-4 rounded-xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-md ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`group block h-full space-y-3 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/50 hover:shadow-md sm:p-6 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
       <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
         <Icon className="h-5 w-5" />
       </div>
       <div>
-        <h3 className="text-lg font-semibold leading-none tracking-tight">{title}</h3>
-        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+        <h3 className="text-base font-semibold leading-none tracking-tight sm:text-lg">
+          {title}
+        </h3>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+          {description}
+        </p>
       </div>
     </Link>
   );
@@ -40,21 +44,23 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <Header />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto w-full px-4 py-6 sm:py-8 lg:py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Access your document tools.</p>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl">Dashboard</h1>
+          <p className="text-sm text-muted-foreground sm:text-base">Access your document tools.</p>
         </div>
 
-        {/* Quick File Inspector (Functional Demo) */}
-        <div className="mb-12 rounded-xl border border-dashed border-border bg-muted/30 p-8 text-center">
+        {/* Quick File Inspector (Functional Demo) – kept lightweight but centered on all screens */}
+        <div className="mb-12 w-full max-w-2xl rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center sm:p-8 mx-auto">
           <h2 className="mb-4 text-xl font-semibold">Local File Inspector (Demo)</h2>
-          <p className="mb-6 text-sm text-muted-foreground">Select a file to view its metadata instantly without uploading.</p>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Select a file to view its metadata instantly without uploading.
+          </p>
           
           <div className="flex flex-col items-center justify-center gap-4">
-            <label className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+            <label className="cursor-pointer rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 sm:text-base">
               <input type="file" className="hidden" onChange={handleFile} />
               <div className="flex items-center gap-2">
                 <Upload className="h-4 w-4" /> Select File
@@ -62,20 +68,44 @@ export default function Dashboard() {
             </label>
             
             {fileInfo && (
-              <div className="mt-4 w-full max-w-md rounded-lg border border-border bg-card p-4 text-left shadow-sm">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <span className="font-semibold">Name:</span> <span>{fileInfo.name}</span>
-                  <span className="font-semibold">Size:</span> <span>{fileInfo.size}</span>
-                  <span className="font-semibold">Type:</span> <span>{fileInfo.type || "Unknown"}</span>
-                  <span className="font-semibold">Modified:</span> <span>{fileInfo.lastModified}</span>
+              <div className="mt-4 w-full max-w-md rounded-lg border border-border bg-card p-4 text-left shadow-sm sm:p-5">
+                <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                  <span className="font-semibold text-foreground">Name:</span>
+                  <span
+                    className="truncate text-muted-foreground"
+                    title={fileInfo.name}
+                  >
+                    {fileInfo.name}
+                  </span>
+                  <span className="font-semibold text-foreground">Size:</span>
+                  <span
+                    className="truncate text-muted-foreground"
+                    title={fileInfo.size}
+                  >
+                    {fileInfo.size}
+                  </span>
+                  <span className="font-semibold text-foreground">Type:</span>
+                  <span
+                    className="truncate text-muted-foreground"
+                    title={fileInfo.type || "Unknown"}
+                  >
+                    {fileInfo.type || "Unknown"}
+                  </span>
+                  <span className="font-semibold text-foreground">Modified:</span>
+                  <span
+                    className="truncate text-muted-foreground"
+                    title={fileInfo.lastModified}
+                  >
+                    {fileInfo.lastModified}
+                  </span>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Tools Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Tools Grid – responsive cards that stay compact on mobile */}
+        <div className="grid gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
           <ToolCard
             icon={FileText}
             title="PDF Merge"
