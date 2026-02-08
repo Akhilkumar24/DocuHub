@@ -1,10 +1,8 @@
 "use client";
 
 import { ToolCard } from "@/components/ToolCard";
-import { FileText } from "lucide-react";
-import { Upload } from "lucide-react";
+import { FileText, Upload } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import { useState } from "react";
 import { motion } from "framer-motion";
 
 export default function ToolUploadPage() {
@@ -17,7 +15,6 @@ export default function ToolUploadPage() {
         return (
             <div className="min-h-screen flex flex-col">
                 <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
-
                     <div className="mb-12">
                         <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">
                             PDF Tools
@@ -29,7 +26,6 @@ export default function ToolUploadPage() {
 
                     {/* Tools Grid */}
                     <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
-
                         {/* Merge PDF */}
                         <ToolCard
                             icon={FileText}
@@ -57,9 +53,15 @@ export default function ToolUploadPage() {
                             disabled={false}
                         />
 
-
+                        {/* Protect PDF */}
+                        <ToolCard
+                            icon={FileText}
+                            title="Protect PDF"
+                            description="Secure your PDF with a password"
+                            href="/dashboard/pdf-protect"
+                            disabled={false}
+                        />
                     </div>
-
                 </main>
             </div>
         );
@@ -79,7 +81,6 @@ export default function ToolUploadPage() {
     return (
         <div className="min-h-screen flex flex-col">
             <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
-
                 <div className="mb-12">
                     <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">
                         Upload your file
@@ -116,9 +117,7 @@ export default function ToolUploadPage() {
                         <span>Supported formats: PDF, JPG, PNG</span>
                         <span>Max file size: 10MB</span>
                     </div>
-
                 </div>
-
             </main>
         </div>
     );
