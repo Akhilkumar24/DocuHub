@@ -1,31 +1,29 @@
 "use client";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, Upload } from "lucide-react";
 
 import { ToolCard } from "@/components/ToolCard";
-import { FileText, Upload } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { useState } from "react";
-
 import { motion } from "framer-motion";
 
 export default function ToolUploadPage() {
     const router = useRouter();
     const params = useParams();
-    const toolId = params.id;
+    const toolId = params.id as string;
+
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         setSelectedFile(file);
 
-        // simulate processing delay
         setTimeout(() => {
             router.push(`/tool/${toolId}/processing`);
         }, 500);
     };
-
 
     const getToolTitle = () => {
         switch (toolId) {
@@ -40,16 +38,10 @@ export default function ToolUploadPage() {
         }
     };
 
-
-
-
-
     // PDF Tools page
     if (toolId === "pdf-tools") {
         return (
             <div className="min-h-screen flex flex-col">
-
-                {/* Back to Dashboard */}
                 <div className="container mx-auto px-6 pt-6 md:px-12">
                     <Link
                         href="/dashboard"
@@ -62,7 +54,7 @@ export default function ToolUploadPage() {
 
                 <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
                     <div className="mb-12">
-                        <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">
+                        <h1 className="text-3xl font-semibold text-[#1e1e2e] mb-2">
                             PDF Tools
                         </h1>
                         <p className="text-muted-foreground text-lg">
@@ -76,7 +68,6 @@ export default function ToolUploadPage() {
                             title="Merge PDF"
                             description="Combine multiple PDFs into one"
                             href="/dashboard/pdf-merge"
-                            disabled={false}
                         />
 
                         <ToolCard
@@ -84,7 +75,6 @@ export default function ToolUploadPage() {
                             title="Split PDF"
                             description="Split PDF into separate pages"
                             href="/dashboard/pdf-split"
-                            disabled={false}
                         />
 
                         <ToolCard
@@ -92,7 +82,6 @@ export default function ToolUploadPage() {
                             title="Document to PDF"
                             description="Convert documents into PDF format"
                             href="/dashboard/document-to-pdf"
-                            disabled={false}
                         />
 
                         <ToolCard
@@ -100,7 +89,6 @@ export default function ToolUploadPage() {
                             title="Protect PDF"
                             description="Secure your PDF with a password"
                             href="/dashboard/pdf-protect"
-                            disabled={false}
                         />
                     </div>
                 </main>
@@ -108,12 +96,10 @@ export default function ToolUploadPage() {
         );
     }
 
-
-    // Upload page for other tools
+    // Upload page
     return (
         <div className="min-h-screen flex flex-col">
             <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
-                {/* Back to Dashboard */}
                 <Link
                     href="/dashboard"
                     className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#1e1e2e] mb-6"
@@ -123,45 +109,37 @@ export default function ToolUploadPage() {
                 </Link>
 
                 <div className="mb-12">
-                    <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">
+                    <h1 className="text-3xl font-semibold text-[#1e1e2e] mb-2">
                         {getToolTitle()}
                     </h1>
-
                 </div>
-                {/* Empty state shown before file upload */}
+
                 {!selectedFile && (
                     <div className="mb-8 text-center text-muted-foreground">
-                        <div className="flex flex-col items-center gap-2">
-                            <Upload className="w-10 h-10 opacity-60" />
-                            <p className="text-lg font-medium">
-                                No file selected yet
-                            </p>
-                            <p className="text-sm">
-                                Upload a file to get started
-                            </p>
-                        </div>
+                        <Upload className="w-10 h-10 opacity-60 mx-auto mb-2" />
+                        <p className="text-lg font-medium">
+                            No file selected yet
+                        </p>
+                        <p className="text-sm">
+                            Upload a file to get started
+                        </p>
                     </div>
                 )}
-
 
                 <div className="w-full max-w-5xl">
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="relative w-full rounded-2xl border-2 border-dashed border-[#ccdcdb] bg-[#eef6f5] hover:bg-[#e4eff0] transition-colors"
+                        className="relative w-full rounded-2xl border-2 border-dashed border-[#ccdcdb] bg-[#eef6f5]"
                     >
-                        <label className="flex flex-col items-center justify-center w-full h-[400px] cursor-pointer">
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <div className="mb-6 text-[#1e1e2e]">
-                                    <Upload className="w-16 h-16 stroke-1" />
-                                </div>
-                                <p className="mb-2 text-xl text-[#1e1e2e] font-medium">
-                                    Drag & drop your file here
-                                </p>
-                                <p className="text-base text-muted-foreground">
-                                    or click to browse
-                                </p>
-                            </div>
+                        <label className="flex flex-col items-center justify-center h-[400px] cursor-pointer">
+                            <Upload className="w-16 h-16 mb-4" />
+                            <p className="text-xl font-medium">
+                                Drag & drop your file here
+                            </p>
+                            <p className="text-muted-foreground">
+                                or click to browse
+                            </p>
                             <input
                                 type="file"
                                 className="hidden"
@@ -170,10 +148,13 @@ export default function ToolUploadPage() {
                         </label>
                     </motion.div>
 
-                    <div className="flex justify-between text-xs text-muted-foreground mt-4 px-1">
-                        <span>Supported formats: PDF, JPG, PNG</span>
-                        <span>Max file size: 10MB</span>
-                    </div>
+                    {selectedFile && (
+                        <p className="mt-4 text-sm text-muted-foreground">
+                            <strong>Selected file:</strong>{" "}
+                            {selectedFile.name} (
+                            {(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                    )}
                 </div>
             </main>
         </div>
