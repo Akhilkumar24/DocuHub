@@ -1,4 +1,6 @@
 "use client";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 import { ToolCard } from "@/components/ToolCard";
 import { FileText } from "lucide-react";
@@ -15,8 +17,21 @@ export default function ToolUploadPage() {
     // PDF Tools page
     if (toolId === "pdf-tools") {
         return (
+
             <div className="min-h-screen flex flex-col">
-                <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
+
+                {/* Back to Dashboard */}
+                <div className="container mx-auto px-6 pt-6 md:px-12">
+                    <Link
+                        href="/dashboard"
+                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#1e1e2e]"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Dashboard
+                    </Link>
+                </div>
+
+                <main className="flex-1 container mx-auto px-6 py-8 md:px-12">
 
                     <div className="mb-12">
                         <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">
@@ -69,6 +84,16 @@ export default function ToolUploadPage() {
     return (
         <div className="min-h-screen flex flex-col">
             <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
+
+                {/* Back to Dashboard */}
+                <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#1e1e2e] mb-6"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Dashboard
+                </Link>
+
 
                 <div className="mb-12">
                     <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">
