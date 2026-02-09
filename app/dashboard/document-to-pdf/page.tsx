@@ -74,6 +74,11 @@ export default function DocumentToPdfPage() {
         const result = await mammoth.extractRawText({ arrayBuffer });
         text = result.value || "";
       } else {
+        text = await file.text();
+      }
+
+      if (!text.trim()) throw new Error("No readable text");
+
         console.log("Text file detected");
         text = await file.text();
       }
@@ -148,6 +153,73 @@ export default function DocumentToPdfPage() {
     <div style={{ maxWidth: 650, margin: "40px auto" }}>
       <h1>Document to PDF</h1>
 
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".txt,.html,.json,.docx"
+        onChange={handleFileChange}
+        style={{ display: "none" }}
+      />
+
+      {/* Drag & Drop Zone */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={(e) => e.preventDefault()}
+        onClick={() => fileInputRef.current?.click()}
+        style={{
+          marginTop: 20,
+          padding: 40,
+          border: "2px solid #6c63ff",
+          borderRadius: 12,
+          textAlign: "center",
+          cursor: "pointer",
+          background: "#f6f7ff",
+        }}
+      >
+        <p style={{ fontSize: 18 }}>📂 Drop file here or Click to Upload</p>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <p style={{ color: "red", marginTop: 10 }}>
+          ❌ {error}
+        </p>
+      )}
+
+      {/* Preview */}
+      {files[0] && (
+        <div
+          style={{
+            marginTop: 20,
+            padding: 12,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            display: "flex",
+            justifyContent: "space-between",
+            background: "#fafafa",
+          }}
+        >
+          <span>📄 {files[0].name}</span>
+
+          <button
+            onClick={handleRemoveFile}
+            style={{
+              background: "#ff4d4f",
+              color: "white",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: 6,
+            }}
+          >
+            Remove
+          </button>
+        </div>
+      )}
+
+      <br />
+
+      <button onClick={handleConvert} disabled={loading || !!error}>
       {/* ✅ NEW DRAG + DROP AREA */}
       <div
         onDragOver={(e) => {
