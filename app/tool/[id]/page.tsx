@@ -7,6 +7,7 @@ import {
   Scissors,
   FileUp,
   Loader2,
+  FileText,
 } from "lucide-react";
 
 import { ToolCard } from "@/components/ToolCard";
@@ -33,6 +34,13 @@ export default function ToolUploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // 🔹 Duplicate handling state
+  const [files, setFiles] = useState<File[]>([]);
+  const [pendingDuplicate, setPendingDuplicate] = useState<File | null>(null);
+
+  /* --------------------------------------------
+     Remember last-used tool
+  --------------------------------------------- */
   useEffect(() => {
     if (toolId && toolId !== "pdf-tools") {
       localStorage.setItem("lastUsedTool", toolId);
@@ -66,9 +74,23 @@ export default function ToolUploadPage() {
     }
   };
 
+  /* --------------------------------------------
+     FILE INPUT HANDLER (with duplicate detection)
+  --------------------------------------------- */
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 🔹 Duplicate detection
+    const isDuplicate = files.some(
+      (f) => f.name === file.name && f.size === file.size
+    );
+
+    if (isDuplicate) {
+      setPendingDuplicate(file);
+      e.target.value = "";
+      return;
+    }
 
     const allowed = getSupportedTypes();
     const ext = "." + file.name.split(".").pop()?.toLowerCase();
@@ -81,7 +103,9 @@ export default function ToolUploadPage() {
 
     if (file.size > MAX_FILE_SIZE) {
       setFileError(
-        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`
+        `File too large (${(file.size / 1024 / 1024).toFixed(
+          1
+        )}MB). Max 10MB.`
       );
       e.target.value = "";
       return;
@@ -89,9 +113,13 @@ export default function ToolUploadPage() {
 
     setFileError(null);
     setSelectedFile(file);
+    setFiles((prev) => [...prev, file]);
     setHasUnsavedWork(true);
   };
 
+  /* --------------------------------------------
+     DRAG & DROP
+  --------------------------------------------- */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(false);
@@ -109,16 +137,22 @@ export default function ToolUploadPage() {
 
     if (file.size > MAX_FILE_SIZE) {
       setFileError(
-        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`
+        `File too large (${(file.size / 1024 / 1024).toFixed(
+          1
+        )}MB). Max 10MB.`
       );
       return;
     }
 
     setFileError(null);
     setSelectedFile(file);
+    setFiles((prev) => [...prev, file]);
     setHasUnsavedWork(true);
   };
 
+  /* --------------------------------------------
+     PROCESS FILE
+  --------------------------------------------- */
   const handleProcessFile = async () => {
     if (!selectedFile) return;
 
@@ -144,6 +178,9 @@ export default function ToolUploadPage() {
     router.push("/dashboard");
   };
 
+  /* --------------------------------------------
+     PDF TOOLS PAGE (NO UPLOAD HERE)
+  --------------------------------------------- */
   if (toolId === "pdf-tools") {
     return (
       <div className="min-h-screen flex flex-col">
@@ -151,14 +188,36 @@ export default function ToolUploadPage() {
           <h1 className="flex items-center text-3xl font-semibold mb-2">
             PDF Tools
           </h1>
-          <p className="text-muted-foreground mb-12">
-            Choose a PDF tool
-          </p>
+          <p className="text-muted-foreground mb-12">Choose a PDF tool</p>
 
           <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
-            <ToolCard icon={Combine} title="Merge PDF" description="Combine PDFs" href="/dashboard/pdf-merge" />
-            <ToolCard icon={Scissors} title="Split PDF" description="Split pages" href="/dashboard/pdf-split" />
-            <ToolCard icon={FileUp} title="Document to PDF" description="Convert docs" href="/dashboard/document-to-pdf" />
+            <ToolCard
+              icon={Combine}
+              title="Merge PDF"
+              description="Combine multiple PDFs"
+              href="/dashboard/pdf-merge"
+            />
+
+            <ToolCard
+              icon={Scissors}
+              title="Split PDF"
+              description="Split PDF pages"
+              href="/dashboard/pdf-split"
+            />
+
+            <ToolCard
+              icon={FileText}
+              title="Redact PDF"
+              description="Securely hide sensitive information"
+              href="/tool/pdf-redact"
+            />
+
+            <ToolCard
+              icon={FileUp}
+              title="Document to PDF"
+              description="Convert documents to PDF"
+              href="/dashboard/document-to-pdf"
+            />
           </div>
         </main>
       </div>
@@ -167,6 +226,59 @@ export default function ToolUploadPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* 🔹 Duplicate popup */}
+      {pendingDuplicate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white p-5 rounded-xl w-[340px] shadow-xl border">
+            <h3 className="font-semibold mb-2 text-[#1e1e2e]">
+              Duplicate file detected
+            </h3>
+
+            <p className="text-sm text-gray-600 mb-4">
+              "{pendingDuplicate.name}" is already uploaded.
+            </p>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-3 py-1 text-sm rounded-md border border-gray-300 hover:bg-gray-100"
+                onClick={() => {
+                  setFiles((prev) => [...prev, pendingDuplicate]);
+                  setSelectedFile(pendingDuplicate);
+                  setPendingDuplicate(null);
+                }}
+              >
+                Keep both
+              </button>
+
+              <button
+                className="px-3 py-1 text-sm rounded-md bg-[#1e1e2e] text-white hover:bg-black"
+                onClick={() => {
+                  setFiles((prev) =>
+                    prev.filter(
+                      (f) =>
+                        f.name !== pendingDuplicate.name ||
+                        f.size !== pendingDuplicate.size
+                    )
+                  );
+                  setFiles((prev) => [...prev, pendingDuplicate]);
+                  setSelectedFile(pendingDuplicate);
+                  setPendingDuplicate(null);
+                }}
+              >
+                Replace
+              </button>
+
+              <button
+                className="px-3 py-1 text-sm rounded-md text-gray-500 hover:text-black"
+                onClick={() => setPendingDuplicate(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="container mx-auto px-6 py-12 md:px-12">
         <button
           onClick={handleBackNavigation}
@@ -189,7 +301,9 @@ export default function ToolUploadPage() {
           onDragLeave={() => setIsDraggingOver(false)}
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-xl p-20 text-center cursor-pointer ${
-            isDraggingOver ? "border-blue-500 bg-blue-50" : "hover:border-gray-400"
+            isDraggingOver
+              ? "border-blue-500 bg-blue-50"
+              : "hover:border-gray-400"
           }`}
         >
           <Upload className="mx-auto mb-4" />
@@ -211,12 +325,18 @@ export default function ToolUploadPage() {
               disabled={isProcessing}
               className="mt-3 px-4 py-2 bg-black text-white rounded flex items-center gap-2"
             >
-              {isProcessing ? <Loader2 className="animate-spin" /> : "Process File"}
+              {isProcessing ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                "Process File"
+              )}
             </button>
           </div>
         )}
 
-        {fileError && <p className="mt-3 text-sm text-red-600">{fileError}</p>}
+        {fileError && (
+          <p className="mt-3 text-sm text-red-600">{fileError}</p>
+        )}
       </main>
     </div>
   );

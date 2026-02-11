@@ -19,6 +19,9 @@ export function ToolCard({ icon: Icon, title, description, href, disabled, activ
                 ? 'border-blue-500 bg-blue-50 shadow-md'
                 : 'border-white/40 bg-white/40 hover:bg-white/60 hover:shadow-sm hover:border-white/60'
             }
+            className={`group relative flex items-center justify-between p-6 rounded-2xl border border-white/40 bg-white/40 backdrop-blur-sm 
+            transition-all duration-300 ease-out
+            hover:bg-white/60 hover:shadow-xl hover:-translate-y-1 hover:border-white/60
             ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
         >
             <div className="flex items-center gap-4">
