@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import { ToolCard } from "@/components/ToolCard";
-// ❌ Removed HelpTooltip import
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -35,20 +34,35 @@ export default function ToolUploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // 🔹 Duplicate handling state
   const [files, setFiles] = useState<File[]>([]);
   const [pendingDuplicate, setPendingDuplicate] = useState<File | null>(null);
 
   /* --------------------------------------------
-     Remember last-used tool
+     ✅ Remember last-used tool + recent tools
   --------------------------------------------- */
   useEffect(() => {
     if (toolId && toolId !== "pdf-tools") {
+      // Last tool (existing behavior)
       localStorage.setItem("lastUsedTool", toolId);
       localStorage.removeItem("hideResume");
+
+      // ✅ Recent tools list (NEW)
+      const existing = JSON.parse(
+        localStorage.getItem("recentTools") || "[]"
+      );
+
+      const updated = [
+        toolId,
+        ...existing.filter((t: string) => t !== toolId),
+      ].slice(0, 5);
+
+      localStorage.setItem("recentTools", JSON.stringify(updated));
     }
   }, [toolId]);
 
+  /* --------------------------------------------
+     Warn before refresh
+  --------------------------------------------- */
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!hasUnsavedWork) return;
@@ -76,13 +90,12 @@ export default function ToolUploadPage() {
   };
 
   /* --------------------------------------------
-     FILE INPUT HANDLER (with duplicate detection)
+     FILE INPUT
   --------------------------------------------- */
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 🔹 Duplicate detection
     const isDuplicate = files.some(
       (f) => f.name === file.name && f.size === file.size
     );
@@ -104,9 +117,7 @@ export default function ToolUploadPage() {
 
     if (file.size > MAX_FILE_SIZE) {
       setFileError(
-        `File too large (${(file.size / 1024 / 1024).toFixed(
-          1
-        )}MB). Max 10MB.`
+        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`
       );
       e.target.value = "";
       return;
@@ -119,7 +130,7 @@ export default function ToolUploadPage() {
   };
 
   /* --------------------------------------------
-     DRAG & DROP
+     DRAG DROP
   --------------------------------------------- */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -138,9 +149,7 @@ export default function ToolUploadPage() {
 
     if (file.size > MAX_FILE_SIZE) {
       setFileError(
-        `File too large (${(file.size / 1024 / 1024).toFixed(
-          1
-        )}MB). Max 10MB.`
+        `File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`
       );
       return;
     }
@@ -180,7 +189,7 @@ export default function ToolUploadPage() {
   };
 
   /* --------------------------------------------
-     PDF TOOLS PAGE (NO UPLOAD HERE)
+     PDF TOOLS PAGE
   --------------------------------------------- */
   if (toolId === "pdf-tools") {
     return (
@@ -192,107 +201,59 @@ export default function ToolUploadPage() {
           <p className="text-muted-foreground mb-12">Choose a PDF tool</p>
 
           <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
-            <ToolCard
-              icon={Combine}
-              title="Merge PDF"
-              description="Combine multiple PDFs"
-              href="/dashboard/pdf-merge"
-            />
-            <ToolCard
-              icon={Minimize2}
-              title="Compress PDF"
-              description="Reduce PDF file size"
-              href="/tool/pdf-compress"
-              disabled={false}
-            />
+<ToolCard
+  icon={Combine}
+  title="Merge PDF"
+  description="Combine multiple PDFs"
+  href="/dashboard/pdf-merge"
+/>
 
-            <ToolCard
-              icon={Scissors}
-              title="Split PDF"
-              description="Split PDF pages"
-              href="/dashboard/pdf-split"
-            />
+<ToolCard
+  icon={Minimize2}
+  title="Compress PDF"
+  description="Reduce PDF file size"
+  href="/tool/pdf-compress"
+/>
 
-            <ToolCard
-              icon={FileText}
-              title="Redact PDF"
-              description="Securely hide sensitive information"
-              href="/tool/pdf-redact"
-            />
-            <ToolCard
-              icon={FileText}
-              title="Protect PDF"
-              description="Add password protection to PDF"
-              href="/tool/pdf-protect"
-            />
+<ToolCard
+  icon={Scissors}
+  title="Split PDF"
+  description="Split PDF pages"
+  href="/dashboard/pdf-split"
+/>
 
-            <ToolCard
-              icon={FileUp}
-              title="Document to PDF"
-              description="Convert documents to PDF"
-              href="/dashboard/document-to-pdf"
-            />
+<ToolCard
+  icon={FileText}
+  title="Redact PDF"
+  description="Securely hide sensitive information"
+  href="/tool/pdf-redact"
+/>
+
+<ToolCard
+  icon={FileText}
+  title="Protect PDF"
+  description="Add password protection to PDF"
+  href="/tool/pdf-protect"
+/>
+
+<ToolCard
+  icon={FileUp}
+  title="Document to PDF"
+  description="Convert documents to PDF"
+  href="/dashboard/document-to-pdf"
+/>
+
           </div>
         </main>
       </div>
     );
   }
 
+  /* --------------------------------------------
+     UPLOAD PAGE
+  --------------------------------------------- */
   return (
     <div className="min-h-screen flex flex-col">
-      {/* 🔹 Duplicate popup */}
-      {pendingDuplicate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white p-5 rounded-xl w-[340px] shadow-xl border">
-            <h3 className="font-semibold mb-2 text-[#1e1e2e]">
-              Duplicate file detected
-            </h3>
-
-            <p className="text-sm text-gray-600 mb-4">
-              "{pendingDuplicate.name}" is already uploaded.
-            </p>
-
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-3 py-1 text-sm rounded-md border border-gray-300 hover:bg-gray-100"
-                onClick={() => {
-                  setFiles((prev) => [...prev, pendingDuplicate]);
-                  setSelectedFile(pendingDuplicate);
-                  setPendingDuplicate(null);
-                }}
-              >
-                Keep both
-              </button>
-
-              <button
-                className="px-3 py-1 text-sm rounded-md bg-[#1e1e2e] text-white hover:bg-black"
-                onClick={() => {
-                  setFiles((prev) =>
-                    prev.filter(
-                      (f) =>
-                        f.name !== pendingDuplicate.name ||
-                        f.size !== pendingDuplicate.size
-                    )
-                  );
-                  setFiles((prev) => [...prev, pendingDuplicate]);
-                  setSelectedFile(pendingDuplicate);
-                  setPendingDuplicate(null);
-                }}
-              >
-                Replace
-              </button>
-
-              <button
-                className="px-3 py-1 text-sm rounded-md text-gray-500 hover:text-black"
-                onClick={() => setPendingDuplicate(null)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <main className="container mx-auto px-6 py-12 md:px-12">
         <button
           onClick={handleBackNavigation}
