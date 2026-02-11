@@ -1,4 +1,5 @@
 "use client";
+import { Minimize2 } from "lucide-react";
 
 import {
   ArrowLeft,
@@ -196,6 +197,13 @@ export default function ToolUploadPage() {
               title="Merge PDF"
               description="Combine multiple PDFs"
               href="/dashboard/pdf-merge"
+            />
+            <ToolCard
+              icon={Minimize2}
+              title="Compress PDF"
+              description="Reduce PDF file size"
+              href="/tool/pdf-compress"
+              disabled={false}
             />
 
             <ToolCard
