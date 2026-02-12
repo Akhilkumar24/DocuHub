@@ -1,5 +1,5 @@
 "use client";
-import { Minimize2, X } from "lucide-react";
+import { Minimize2, Trash2 } from "lucide-react";
 
 import {
   ArrowLeft,
@@ -37,9 +37,6 @@ export default function ToolUploadPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [pendingDuplicate, setPendingDuplicate] = useState<File | null>(null);
 
-  /* --------------------------------------------
-     Remember last-used tool + recent tools + usage count
-  --------------------------------------------- */
   useEffect(() => {
     if (toolId && toolId !== "pdf-tools") {
       localStorage.setItem("lastUsedTool", toolId);
@@ -75,7 +72,6 @@ export default function ToolUploadPage() {
     }
   }, [toolId]);
 
-  /* Warn before refresh */
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!hasUnsavedWork) return;
@@ -102,7 +98,6 @@ export default function ToolUploadPage() {
     }
   };
 
-  /* FILE INPUT */
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -140,7 +135,6 @@ export default function ToolUploadPage() {
     setHasUnsavedWork(true);
   };
 
-  /* DRAG DROP */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(false);
@@ -169,14 +163,12 @@ export default function ToolUploadPage() {
     setHasUnsavedWork(true);
   };
 
-  /* REMOVE FILE */
   const handleRemoveFile = () => {
     setSelectedFile(null);
     setFiles([]);
     setHasUnsavedWork(false);
   };
 
-  /* PROCESS FILE */
   const handleProcessFile = async () => {
     if (!selectedFile) return;
 
@@ -207,7 +199,6 @@ export default function ToolUploadPage() {
     router.push("/dashboard");
   };
 
-  /* PDF TOOLS PAGE */
   if (toolId === "pdf-tools") {
     return (
       <div className="min-h-screen flex flex-col">
@@ -228,7 +219,6 @@ export default function ToolUploadPage() {
     );
   }
 
-  /* UPLOAD PAGE */
   return (
     <div className="min-h-screen flex flex-col">
       <main className="container mx-auto px-6 py-12 md:px-12">
@@ -281,13 +271,14 @@ export default function ToolUploadPage() {
                 </p>
               </div>
 
-              {/* ✅ UPDATED REMOVE BUTTON (Icon + Text, No Logic Change) */}
               <button
                 onClick={handleRemoveFile}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition"
+                type="button"
+                className="flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 transition-all duration-200"
+                aria-label="Remove uploaded file"
               >
-                <X className="w-4 h-4" />
-                Remove
+                <Trash2 className="w-4 h-4" />
+                <span>Remove</span>
               </button>
 
               {isProcessing && (
