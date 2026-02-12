@@ -50,6 +50,11 @@ export default function ToolUploadPage() {
     type: string;
   } | null>(null);
 
+  // ✅ NEW Compression Level State
+  const [compressionLevel, setCompressionLevel] = useState<
+    "low" | "medium" | "high"
+  >("medium");
+
   /* Restore persisted state */
   useEffect(() => {
     if (!toolId) return;
@@ -110,6 +115,7 @@ export default function ToolUploadPage() {
       case "pdf-split":
       case "pdf-protect":
       case "pdf-redact":
+      case "pdf-compress": // ✅ Allow PDF for compress
         return [".pdf"];
       default:
         return [];
@@ -291,9 +297,44 @@ export default function ToolUploadPage() {
               {isProcessing && <Loader2 className="w-5 h-5 animate-spin text-blue-500" />}
             </div>
 
-            {isProcessing && (
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                <div className="h-full bg-blue-600 animate-pulse w-full" />
+            {/* ✅ Compression Selector */}
+            {toolId === "pdf-compress" && (
+              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900/40">
+                <p className="font-medium mb-3">
+                  Compression Level
+                </p>
+
+                <div className="space-y-2 text-sm">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={compressionLevel === "low"}
+                      onChange={() => setCompressionLevel("low")}
+                      className="accent-blue-600"
+                    />
+                    Low Compression (Best Quality)
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={compressionLevel === "medium"}
+                      onChange={() => setCompressionLevel("medium")}
+                      className="accent-blue-600"
+                    />
+                    Medium Compression (Balanced)
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={compressionLevel === "high"}
+                      onChange={() => setCompressionLevel("high")}
+                      className="accent-blue-600"
+                    />
+                    High Compression (Smallest Size)
+                  </label>
+                </div>
               </div>
             )}
 
