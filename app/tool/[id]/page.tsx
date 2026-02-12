@@ -38,16 +38,13 @@ export default function ToolUploadPage() {
   const [pendingDuplicate, setPendingDuplicate] = useState<File | null>(null);
 
   /* --------------------------------------------
-     ✅ Remember last-used tool + recent tools + usage count (FIXED)
+     Remember last-used tool + recent tools + usage count
   --------------------------------------------- */
   useEffect(() => {
     if (toolId && toolId !== "pdf-tools") {
-
-      // Last used tool
       localStorage.setItem("lastUsedTool", toolId);
       localStorage.removeItem("hideResume");
 
-      // Recent tools list
       const existing = JSON.parse(
         localStorage.getItem("recentTools") || "[]"
       );
@@ -59,7 +56,6 @@ export default function ToolUploadPage() {
 
       localStorage.setItem("recentTools", JSON.stringify(updated));
 
-      // ✅ FIX — Prevent double increment (React Strict Mode safe)
       const sessionKey = `counted_${toolId}`;
 
       if (!sessionStorage.getItem(sessionKey)) {
@@ -79,9 +75,7 @@ export default function ToolUploadPage() {
     }
   }, [toolId]);
 
-  /* --------------------------------------------
-     Warn before refresh
-  --------------------------------------------- */
+  /* Warn before refresh */
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!hasUnsavedWork) return;
@@ -177,39 +171,24 @@ export default function ToolUploadPage() {
 
   /* PROCESS FILE */
   const handleProcessFile = async () => {
-  console.log("➡ Process button clicked");
-  console.log("Selected file:", selectedFile);
+    if (!selectedFile) return;
 
-  if (!selectedFile) {
-    console.log("❌ No file selected");
-    return;
-  }
+    setIsProcessing(true);
 
-  setIsProcessing(true);
+    try {
+      const ok = await storeFile(selectedFile);
 
-  try {
-    console.log("➡ Calling storeFile()...");
-    const ok = await storeFile(selectedFile);
-
-    console.log("➡ storeFile result:", ok);
-
-    if (ok) {
-      console.log("➡ Navigating to processing page");
-      router.push(`/tool/${toolId}/processing`);
-    } else {
-      console.log("❌ storeFile returned false");
-      setFileError("Failed to process file.");
+      if (ok) {
+        router.push(`/tool/${toolId}/processing`);
+      } else {
+        setFileError("Failed to process file.");
+      }
+    } catch {
+      setFileError("Unexpected error occurred.");
+    } finally {
+      setIsProcessing(false);
     }
-
-  } catch (err) {
-    console.log("❌ ERROR in handleProcessFile:", err);
-    setFileError("Unexpected error occurred.");
-  } finally {
-    console.log("➡ Finally block executed");
-    setIsProcessing(false);
-  }
-};
-
+  };
 
   const handleBackNavigation = () => {
     if (hasUnsavedWork) {
@@ -226,54 +205,16 @@ export default function ToolUploadPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <main className="container mx-auto px-6 py-12 md:px-12">
-          <h1 className="flex items-center text-3xl font-semibold mb-2">
-            PDF Tools
-          </h1>
+          <h1 className="text-3xl font-semibold mb-2">PDF Tools</h1>
           <p className="text-muted-foreground mb-12">Choose a PDF tool</p>
 
-         const handlePr <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
-<ToolCard
-  icon={Combine}
-  title="Merge PDF"
-  description="Combine multiple PDFs"
-  href="/dashboard/pdf-merge"
-/>
-
-<ToolCard
-  icon={Minimize2}
-  title="Compress PDF"
-  description="Reduce PDF file size"
-  href="/tool/pdf-compress"
-/>
-
-<ToolCard
-  icon={Scissors}
-  title="Split PDF"
-  description="Split PDF pages"
-  href="/dashboard/pdf-split"
-/>
-
-<ToolCard
-  icon={FileText}
-  title="Redact PDF"
-  description="Securely hide sensitive information"
-  href="/tool/pdf-redact"
-/>
-
-<ToolCard
-  icon={FileText}
-  title="Protect PDF"
-  description="Add password protection to PDF"
-  href="/tool/pdf-protect"
-/>
-
-<ToolCard
-  icon={FileUp}
-  title="Document to PDF"
-  description="Convert documents to PDF"
-  href="/dashboard/document-to-pdf"
-/>
-
+          <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
+            <ToolCard icon={Combine} title="Merge PDF" description="Combine multiple PDFs" href="/dashboard/pdf-merge" />
+            <ToolCard icon={Minimize2} title="Compress PDF" description="Reduce PDF file size" href="/tool/pdf-compress" />
+            <ToolCard icon={Scissors} title="Split PDF" description="Split PDF pages" href="/dashboard/pdf-split" />
+            <ToolCard icon={FileText} title="Redact PDF" description="Securely hide sensitive information" href="/tool/pdf-redact" />
+            <ToolCard icon={FileText} title="Protect PDF" description="Add password protection to PDF" href="/tool/pdf-protect" />
+            <ToolCard icon={FileUp} title="Document to PDF" description="Convert documents to PDF" href="/dashboard/document-to-pdf" />
           </div>
         </main>
       </div>
@@ -292,9 +233,7 @@ export default function ToolUploadPage() {
           Back to Dashboard
         </button>
 
-        <h1 className="flex items-center text-3xl font-semibold mb-8">
-          Upload your file
-        </h1>
+        <h1 className="text-3xl font-semibold mb-8">Upload your file</h1>
 
         <motion.div
           onClick={() => fileInputRef.current?.click()}
@@ -304,7 +243,7 @@ export default function ToolUploadPage() {
           }}
           onDragLeave={() => setIsDraggingOver(false)}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-xl p-20 text-center cursor-pointer ${
+          className={`border-2 border-dashed rounded-xl p-20 text-center cursor-pointer transition ${
             isDraggingOver
               ? "border-blue-500 bg-blue-50"
               : "hover:border-gray-400"
@@ -322,15 +261,38 @@ export default function ToolUploadPage() {
         </motion.div>
 
         {selectedFile && (
-          <div className="mt-4">
-            <p className="font-medium">{selectedFile.name}</p>
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center gap-3 p-4 rounded-xl border bg-white shadow-sm">
+              <FileText className="w-8 h-8 text-blue-500" />
+
+              <div className="flex-1">
+                <p className="font-medium text-gray-900">{selectedFile.name}</p>
+                <p className="text-sm text-gray-500">
+                  {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+
+              {isProcessing && (
+                <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+              )}
+            </div>
+
+            {isProcessing && (
+              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                <div className="h-full bg-blue-600 animate-pulse w-full" />
+              </div>
+            )}
+
             <button
               onClick={handleProcessFile}
               disabled={isProcessing}
-              className="mt-3 px-4 py-2 bg-black text-white rounded flex items-center gap-2"
+              className="px-5 py-2.5 bg-black text-white rounded-lg flex items-center gap-2 disabled:opacity-60"
             >
               {isProcessing ? (
-                <Loader2 className="animate-spin" />
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processing...
+                </>
               ) : (
                 "Process File"
               )}
