@@ -6,11 +6,16 @@ import { ToolCard } from "@/components/ToolCard";
 import { FileText, Upload } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { useState, useRef } from "react";
+
 
 export default function ToolUploadPage() {
     const router = useRouter();
     const params = useParams();
     const toolId = params.id;
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+
     const getToolTitle = () => {
         switch (toolId) {
             case "file-conversion":
@@ -25,72 +30,85 @@ export default function ToolUploadPage() {
     };
 
 
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
+        setSelectedFile(file);
+    };
+
+    const handleResetTool = () => {
+        setSelectedFile(null);
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
 
 
     // PDF Tools page
     if (toolId === "pdf-tools") {
-  return (
-    <div className="min-h-screen flex flex-col">
+        return (
+            <div className="min-h-screen flex flex-col">
 
-      {/* Back to Dashboard */}
-      <div className="container mx-auto px-6 pt-6 md:px-12">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#1e1e2e]"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
-        </Link>
-      </div>
+                {/* Back to Dashboard */}
+                <div className="container mx-auto px-6 pt-6 md:px-12">
+                    <Link
+                        href="/dashboard"
+                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-[#1e1e2e]"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Back to Dashboard
+                    </Link>
+                </div>
 
-      <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
-        <div className="mb-12">
-          <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">
-            PDF Tools
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Choose a PDF tool
-          </p>
-        </div>
+                <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
+                    <div className="mb-12">
+                        <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">
+                            PDF Tools
+                        </h1>
+                        <p className="text-muted-foreground text-lg">
+                            Choose a PDF tool
+                        </p>
+                    </div>
 
-        <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
-          <ToolCard
-            icon={FileText}
-            title="Merge PDF"
-            description="Combine multiple PDFs into one"
-            href="/dashboard/pdf-merge"
-            disabled={false}
-          />
+                    <div className="grid gap-6 md:grid-cols-2 max-w-5xl">
+                        <ToolCard
+                            icon={FileText}
+                            title="Merge PDF"
+                            description="Combine multiple PDFs into one"
+                            href="/dashboard/pdf-merge"
+                            disabled={false}
+                        />
 
-          <ToolCard
-            icon={FileText}
-            title="Split PDF"
-            description="Split PDF into separate pages"
-            href="/dashboard/pdf-split"
-            disabled={false}
-          />
+                        <ToolCard
+                            icon={FileText}
+                            title="Split PDF"
+                            description="Split PDF into separate pages"
+                            href="/dashboard/pdf-split"
+                            disabled={false}
+                        />
 
-          <ToolCard
-            icon={FileText}
-            title="Document to PDF"
-            description="Convert documents into PDF format"
-            href="/dashboard/document-to-pdf"
-            disabled={false}
-          />
+                        <ToolCard
+                            icon={FileText}
+                            title="Document to PDF"
+                            description="Convert documents into PDF format"
+                            href="/dashboard/document-to-pdf"
+                            disabled={false}
+                        />
 
-          <ToolCard
-            icon={FileText}
-            title="Protect PDF"
-            description="Secure your PDF with a password"
-            href="/dashboard/pdf-protect"
-            disabled={false}
-          />
-        </div>
-      </main>
-    </div>
-  );
-}
+                        <ToolCard
+                            icon={FileText}
+                            title="Protect PDF"
+                            description="Secure your PDF with a password"
+                            href="/dashboard/pdf-protect"
+                            disabled={false}
+                        />
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
 
     // Upload page for other tools
@@ -132,12 +150,29 @@ export default function ToolUploadPage() {
                                 </p>
                             </div>
                             <input
+                                ref={fileInputRef}
                                 type="file"
                                 className="hidden"
                                 onChange={handleFile}
                             />
+
                         </label>
                     </motion.div>
+                    {selectedFile && (
+    <div className="mt-6 flex items-center gap-4">
+        <p className="text-sm font-medium text-[#1e1e2e]">
+            Selected file: {selectedFile.name}
+        </p>
+
+        <button
+            onClick={handleResetTool}
+            className="text-sm text-red-500 hover:underline"
+        >
+            Clear All / Reset Tool
+        </button>
+    </div>
+)}
+
 
                     <div className="flex justify-between text-xs text-muted-foreground mt-4 px-1">
                         <span>Supported formats: PDF, JPG, PNG</span>
