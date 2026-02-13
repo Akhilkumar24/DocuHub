@@ -18,18 +18,51 @@ export default function RecentFiles() {
     }
   }, []);
 
-  // ✅ ADDED — Delete Function
+  // ✅ UPDATED — Delete Function (Now Also Saves Deleted History)
   const handleDelete = (indexToDelete: number) => {
+    const fileToDelete = files[indexToDelete];
+
+    // Remove from recent files
     const updatedFiles = files.filter((_, index) => index !== indexToDelete);
     setFiles(updatedFiles);
     localStorage.setItem("recentFiles", JSON.stringify(updatedFiles));
+
+    // ✅ Add to deleted history
+    const deletedStored = localStorage.getItem("deletedRecentFiles");
+    const deletedFiles = deletedStored ? JSON.parse(deletedStored) : [];
+
+    const deletedEntry = {
+      ...fileToDelete,
+      deletedTime: new Date().toLocaleString(),
+    };
+
+    deletedFiles.unshift(deletedEntry);
+    localStorage.setItem("deletedRecentFiles", JSON.stringify(deletedFiles));
+  };
+
+  // ✅ NEW — Clear Entire History
+  const handleClearHistory = () => {
+    setFiles([]);
+    localStorage.removeItem("recentFiles");
+    localStorage.removeItem("deletedRecentFiles");
   };
 
   if (files.length === 0) return null;
 
   return (
     <div className="mt-12">
-      <h2 className="text-xl font-semibold mb-4">Recent Files</h2>
+
+      {/* ✅ UPDATED HEADER WITH CLEAR BUTTON */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">Recent Files</h2>
+
+        <button
+          onClick={handleClearHistory}
+          className="text-red-500 hover:text-red-700 text-sm font-medium"
+        >
+          Clear History
+        </button>
+      </div>
 
       <div className="space-y-3">
         {files.map((file, index) => (
@@ -44,7 +77,7 @@ export default function RecentFiles() {
               </p>
             </div>
 
-            {/* ✅ ADDED — Delete Button */}
+            {/* Delete Button */}
             <button
               onClick={() => handleDelete(index)}
               className="text-red-500 hover:text-red-700 text-sm font-medium"

@@ -5,6 +5,8 @@ import {
   Upload,
   Loader2,
   FileText,
+  Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
 
 import { ToolCard } from "@/components/ToolCard";
@@ -44,14 +46,14 @@ export default function ToolUploadPage() {
     type: string;
   } | null>(null);
 
-  /* Restore persisted state */
+  /* ---------------- Restore persisted state ---------------- */
   useEffect(() => {
     if (!toolId) return;
     const stored = loadToolState(toolId);
     if (stored?.fileMeta) setPersistedFileMeta(stored.fileMeta);
   }, [toolId]);
 
-  /* Persist state */
+  /* ---------------- Persist state ---------------- */
   useEffect(() => {
     if (!toolId || !selectedFile) return;
 
@@ -64,7 +66,7 @@ export default function ToolUploadPage() {
     });
   }, [toolId, selectedFile]);
 
-  /* Warn before refresh */
+  /* ---------------- Warn before refresh ---------------- */
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!hasUnsavedWork) return;
@@ -77,6 +79,7 @@ export default function ToolUploadPage() {
       window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedWork]);
 
+  /* ---------------- Supported Types ---------------- */
   const getSupportedTypes = () => {
     switch (toolId) {
       case "ocr":
@@ -91,6 +94,22 @@ export default function ToolUploadPage() {
     }
   };
 
+  /* ---------------- File Icon Logic ---------------- */
+  const getFileIcon = (file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+
+    if (ext === "pdf") {
+      return <FileText className="w-6 h-6 text-red-500" />;
+    }
+
+    if (["jpg", "jpeg", "png"].includes(ext || "")) {
+      return <ImageIcon className="w-6 h-6 text-blue-500" />;
+    }
+
+    return <FileText className="w-6 h-6 text-gray-400" />;
+  };
+
+  /* ---------------- Handle File Select ---------------- */
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -113,6 +132,7 @@ export default function ToolUploadPage() {
     setHasUnsavedWork(true);
   };
 
+  /* ---------------- Remove File ---------------- */
   const handleRemoveFile = () => {
     const confirmed = window.confirm(
       "This will remove your uploaded file. Continue?"
@@ -128,10 +148,12 @@ export default function ToolUploadPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  /* ---------------- Replace File ---------------- */
   const handleReplaceFile = () => {
     fileInputRef.current?.click();
   };
 
+  /* ---------------- Process File ---------------- */
   const handleProcessFile = async () => {
     if (!selectedFile) return;
 
@@ -163,7 +185,7 @@ export default function ToolUploadPage() {
     router.push("/dashboard");
   };
 
-  /* PDF Tools Page */
+  /* ================= PDF TOOLS PAGE ================= */
   if (toolId === "pdf-tools") {
     return (
       <div className="min-h-screen flex flex-col">
@@ -187,7 +209,7 @@ export default function ToolUploadPage() {
     );
   }
 
-  /* Upload Page */
+  /* ================= UPLOAD PAGE ================= */
   return (
     <div className="min-h-screen flex flex-col">
       <main className="container mx-auto px-6 py-12 md:px-12">
@@ -238,7 +260,7 @@ export default function ToolUploadPage() {
         {selectedFile && (
           <div className="mt-6 space-y-4">
             <div className="flex items-center gap-3 p-4 rounded-xl border bg-white shadow-sm">
-              <FileText className="w-8 h-8 text-blue-500" />
+              {getFileIcon(selectedFile)}
               <div className="flex-1">
                 <p className="font-medium">{selectedFile.name}</p>
                 <p className="text-sm text-gray-500">
