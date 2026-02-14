@@ -7,7 +7,9 @@ export default function Dashboard() {
       <main className="flex-1 container mx-auto px-6 py-12 md:px-12">
 
         <div className="mb-12">
-          <h1 className="text-3xl font-semibold text-[#1e1e2e] tracking-tight mb-2">Choose a tool</h1>
+<h1 className="text-3xl font-semibold tracking-tight mb-2 text-[var(--color-text-primary)]">
+  Choose a tool
+</h1>
           <p className="text-muted-foreground text-lg">Select what you want to do with your file</p>
         </div>
 
