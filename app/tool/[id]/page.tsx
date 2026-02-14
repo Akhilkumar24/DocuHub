@@ -11,10 +11,15 @@ import {
 import { ToolCard } from "@/components/ToolCard";
 import { PDF_TOOLS } from "@/lib/pdfTools";
 import { useRouter, useParams } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
-import { jpgToPdf } from "@/lib/image/jpgToPdf";
+import { storeFile } from "@/lib/fileStore";
+import {
+  saveToolState,
+  loadToolState,
+  clearToolState,
+} from "@/lib/toolStateStorage";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
@@ -30,31 +35,74 @@ export default function ToolUploadPage() {
   const [fileError, setFileError] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [successMsg, setSuccessMsg] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [hasUnsavedWork, setHasUnsavedWork] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  /* ---------- SUPPORTED TYPES ---------- */
+  const [persistedFileMeta, setPersistedFileMeta] = useState<{
+    name: string;
+    size: number;
+    type: string;
+  } | null>(null);
+
+  /* restore state */
+  useEffect(() => {
+    if (!toolId) return;
+    const stored = loadToolState(toolId);
+    if (stored?.fileMeta) setPersistedFileMeta(stored.fileMeta);
+  }, [toolId]);
+
+  /* save state */
+  useEffect(() => {
+    if (!toolId || !selectedFile) return;
+
+    saveToolState(toolId, {
+      fileMeta: {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type,
+      },
+    });
+  }, [toolId, selectedFile]);
+
+  /* supported types */
   const getSupportedTypes = () => {
-    if (toolId === "jpg-to-pdf") {
-      return [".jpg", ".jpeg", ".img"];
+    switch (toolId) {
+      case "ocr":
+        return [".jpg", ".jpeg", ".png"];
+
+      case "jpeg-to-pdf":
+        return [".jpg", ".jpeg"];
+
+      case "png-to-pdf":
+        return [".png"];
+
+      case "pdf-merge":
+      case "pdf-split":
+      case "pdf-protect":
+      case "pdf-compress":
+      case "pdf-watermark":
+        return [".pdf"];
+
+      default:
+        return [];
     }
-    return [];
   };
 
-  /* ---------- ICON ---------- */
+  /* icon */
   const getFileIcon = (file: File) => {
     const ext = file.name.split(".").pop()?.toLowerCase();
 
-    if (["jpg", "jpeg", "img"].includes(ext || "")) {
+    if (ext === "pdf")
+      return <FileText className="w-6 h-6 text-red-500" />;
+
+    if (["jpg", "jpeg", "png"].includes(ext || ""))
       return <ImageIcon className="w-6 h-6 text-blue-500" />;
-    }
 
     return <FileText className="w-6 h-6 text-gray-400" />;
   };
 
-  /* ---------- FILE SELECT ---------- */
+  /* file select */
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -74,38 +122,44 @@ export default function ToolUploadPage() {
 
     setFileError(null);
     setSelectedFile(file);
-    setSuccessMsg(false);
-    setPdfUrl(null);
+    setHasUnsavedWork(true);
   };
 
-  /* ---------- CONVERT ---------- */
+  /* process */
   const handleProcessFile = async () => {
     if (!selectedFile) return;
 
     setIsProcessing(true);
-    setSuccessMsg(false);
 
     try {
-      const pdfBytes = await jpgToPdf(selectedFile);
+      const ok = await storeFile(selectedFile);
 
-      const blob = new Blob([pdfBytes as BlobPart], {
-
-        type: "application/pdf",
-      });
-
-      const url = URL.createObjectURL(blob);
-
-      setPdfUrl(url);
-      setSuccessMsg(true);
-    } catch (err) {
-      console.error(err);
-      setFileError("Conversion failed.");
+      if (ok) {
+        clearToolState(toolId);
+        router.push(`/tool/${toolId}/processing`);
+      } else {
+        setFileError("Failed to process file.");
+      }
+    } catch (error) {
+      console.error(error);
+      setFileError("Unexpected error occurred.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  /* ---------- TOOL GRID ---------- */
+  /* back */
+  const handleBackNavigation = () => {
+    if (hasUnsavedWork) {
+      const confirmLeave = window.confirm(
+        "You have unsaved work. Leave anyway?"
+      );
+      if (!confirmLeave) return;
+    }
+    router.push("/dashboard");
+  };
+
+  /* PDF TOOLS LIST */
   if (toolId === "pdf-tools") {
     return (
       <div className="min-h-screen flex flex-col">
@@ -129,13 +183,13 @@ export default function ToolUploadPage() {
     );
   }
 
-  /* ---------- UI ---------- */
+  /* upload page */
   return (
     <div className="min-h-screen flex flex-col">
       <main className="container mx-auto px-6 py-12 md:px-12">
 
         <button
-          onClick={() => router.push("/dashboard")}
+          onClick={handleBackNavigation}
           className="inline-flex items-center gap-2 text-sm mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -158,7 +212,14 @@ export default function ToolUploadPage() {
           }`}
         >
           <Upload className="mx-auto mb-4" />
-          <p>Drag & drop or click to browse</p>
+
+          <p>
+            {selectedFile
+              ? selectedFile.name
+              : persistedFileMeta
+              ? `Previously selected: ${persistedFileMeta.name}`
+              : "Drag & drop or click to browse"}
+          </p>
 
           <input
             ref={fileInputRef}
@@ -170,7 +231,7 @@ export default function ToolUploadPage() {
         </motion.div>
 
         {selectedFile && (
-          <div className="mt-6 flex items-center gap-3 p-4 rounded-xl border bg-white shadow-sm">
+          <div className="mt-6 flex items-center gap-3 p-4 border rounded-xl bg-white shadow-sm">
             {getFileIcon(selectedFile)}
 
             <div className="flex-1">
@@ -179,22 +240,6 @@ export default function ToolUploadPage() {
                 {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
               </p>
             </div>
-          </div>
-        )}
-
-        {successMsg && pdfUrl && (
-          <div className="mt-6 text-center">
-            <p className="text-green-600 font-semibold mb-4">
-              Successfully Converted ✓
-            </p>
-
-            <a
-              href={pdfUrl}
-              download="converted.pdf"
-              className="inline-block px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800"
-            >
-              Download PDF
-            </a>
           </div>
         )}
 
