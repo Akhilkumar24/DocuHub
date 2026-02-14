@@ -45,12 +45,14 @@ export default function ToolUploadPage() {
     type: string;
   } | null>(null);
 
+  /* restore state */
   useEffect(() => {
     if (!toolId) return;
     const stored = loadToolState(toolId);
     if (stored?.fileMeta) setPersistedFileMeta(stored.fileMeta);
   }, [toolId]);
 
+  /* save state */
   useEffect(() => {
     if (!toolId || !selectedFile) return;
 
@@ -63,13 +65,17 @@ export default function ToolUploadPage() {
     });
   }, [toolId, selectedFile]);
 
+  /* supported types */
   const getSupportedTypes = () => {
     switch (toolId) {
       case "ocr":
         return [".jpg", ".jpeg", ".png"];
 
       case "jpeg-to-pdf":
-        return [".jpg", ".jpeg"]; // ✅ correct
+        return [".jpg", ".jpeg"];
+
+      case "png-to-pdf":
+        return [".png"];
 
       case "pdf-merge":
       case "pdf-split":
@@ -83,6 +89,7 @@ export default function ToolUploadPage() {
     }
   };
 
+  /* icon */
   const getFileIcon = (file: File) => {
     const ext = file.name.split(".").pop()?.toLowerCase();
 
@@ -95,6 +102,7 @@ export default function ToolUploadPage() {
     return <FileText className="w-6 h-6 text-gray-400" />;
   };
 
+  /* file select */
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -117,6 +125,7 @@ export default function ToolUploadPage() {
     setHasUnsavedWork(true);
   };
 
+  /* process */
   const handleProcessFile = async () => {
     if (!selectedFile) return;
 
@@ -139,6 +148,7 @@ export default function ToolUploadPage() {
     }
   };
 
+  /* back */
   const handleBackNavigation = () => {
     if (hasUnsavedWork) {
       const confirmLeave = window.confirm(
@@ -149,7 +159,7 @@ export default function ToolUploadPage() {
     router.push("/dashboard");
   };
 
-  /* PDF TOOL LIST PAGE */
+  /* PDF TOOLS LIST */
   if (toolId === "pdf-tools") {
     return (
       <div className="min-h-screen flex flex-col">
@@ -173,7 +183,7 @@ export default function ToolUploadPage() {
     );
   }
 
-  /* UPLOAD PAGE */
+  /* upload page */
   return (
     <div className="min-h-screen flex flex-col">
       <main className="container mx-auto px-6 py-12 md:px-12">
@@ -188,7 +198,6 @@ export default function ToolUploadPage() {
 
         <h1 className="text-3xl font-semibold mb-8">Upload your file</h1>
 
-        {/* Upload Box */}
         <motion.div
           onClick={() => fileInputRef.current?.click()}
           onDragOver={(e) => {
@@ -221,7 +230,6 @@ export default function ToolUploadPage() {
           />
         </motion.div>
 
-        {/* File Preview */}
         {selectedFile && (
           <div className="mt-6 flex items-center gap-3 p-4 border rounded-xl bg-white shadow-sm">
             {getFileIcon(selectedFile)}
@@ -235,16 +243,14 @@ export default function ToolUploadPage() {
           </div>
         )}
 
-        {/* Process Button */}
         <button
           onClick={handleProcessFile}
           disabled={!selectedFile || isProcessing}
-          className={`mt-8 w-full py-3 rounded-lg text-sm font-medium transition
-            ${
-              selectedFile && !isProcessing
-                ? "bg-black text-white hover:bg-gray-800"
-                : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+          className={`mt-8 w-full py-3 rounded-lg text-sm font-medium transition ${
+            selectedFile && !isProcessing
+              ? "bg-black text-white hover:bg-gray-800"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
         >
           {isProcessing ? (
             <span className="flex items-center justify-center gap-2">
@@ -259,7 +265,6 @@ export default function ToolUploadPage() {
         {fileError && (
           <p className="mt-3 text-sm text-red-600">{fileError}</p>
         )}
-
       </main>
     </div>
   );
