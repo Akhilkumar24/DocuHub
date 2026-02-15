@@ -416,6 +416,15 @@ Here are some screenshots showing DocuHub in action — all processing happens l
 
 ## 🔒 Security & Privacy
 
+### Privacy Model
+
+- No server-side APIs
+- No file uploads
+- No telemetry or tracking
+- All processing inside Web Workers
+- Memory cleared after processing
+- IndexedDB storage fully user-controlled
+
 ### Our Promises
 
 1. **No Data Collection** – We don't see or store your files
