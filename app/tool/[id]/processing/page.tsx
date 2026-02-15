@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Tesseract from "tesseract.js";
 import { getStoredFiles, clearStoredFiles } from "@/lib/fileStore";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
 
 type StoredFile = {
   data: string;
@@ -27,6 +27,9 @@ export default function ProcessingPage() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [originalSize, setOriginalSize] = useState<number | null>(null);
+const [compressedSize, setCompressedSize] = useState<number | null>(null);
+
 
   /* ================= RUN TOOL ================= */
   useEffect(() => {
@@ -50,8 +53,16 @@ export default function ProcessingPage() {
         else if (toolId === "png-to-pdf")
           await imageToPdf(stored[0].data, "png");
 
-        else if (toolId === "pdf-compress")
-          await startCompressFlow(stored);
+       else if (toolId === "pdf-compress") {
+  const originalBytes = base64ToBytes(stored[0].data);
+  setOriginalSize(originalBytes.length);
+  await startCompressFlow(stored);
+}
+
+
+        else if (toolId === "pdf-page-numbers") {
+          await addPageNumbers(stored[0].data);
+        }
 
         else setStatus("done");
       } catch (e) {
@@ -91,6 +102,26 @@ export default function ProcessingPage() {
  const startCompressFlow = async (files: StoredFile[]) => {
   setStage("Preparing file...");
   setProgress(15);
+  const startCompressFlow = async (files: StoredFile[]) => {
+    const [originalSize, setOriginalSize] = useState<number | null>(null);
+const [compressedSize, setCompressedSize] = useState<number | null>(null);
+
+    setProgress(20);
+
+    const targetSize = localStorage.getItem("targetSize") || "1MB";
+
+    const targetBytes = targetSize.includes("KB")
+      ? Number(targetSize.replace("KB", "")) * 1024
+      : Number(targetSize.replace("MB", "")) * 1024 * 1024;
+
+    const res = await fetch("/api/compress", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        files: files.map((f) => ({ base64: f.data })),
+        targetBytes,
+      }),
+    });
 
   const targetSize = localStorage.getItem("targetSize") || "1MB";
 
@@ -129,6 +160,16 @@ export default function ProcessingPage() {
   setStatus("done");
 };
 
+    const bytes = Uint8Array.from(
+      atob(data.results[0].file),
+      (c) => c.charCodeAt(0)
+    );
+    setCompressedSize(bytes.length);
+
+   setDownloadUrl(makeBlobUrl(bytes));
+    setProgress(100);
+    setStatus("done");
+  };
 
   /* ================= PDF PROTECT ================= */
   const protectPDF = async (base64: string) => {
@@ -162,6 +203,74 @@ export default function ProcessingPage() {
     const saved = await pdf.save();
     setDownloadUrl(makeBlobUrl(saved));
     setStatus("done");
+  };
+
+  /* ================= PAGE NUMBERS ================= */
+  const addPageNumbers = async (base64: string) => {
+    const bytes = base64ToBytes(base64);
+    const pdfDoc = await PDFDocument.load(bytes);
+    const pages = pdfDoc.getPages();
+    
+    const format = localStorage.getItem("pageNumberFormat") || "numeric";
+    const fontSize = parseInt(localStorage.getItem("pageNumberFontSize") || "14", 10);
+    
+    const helveticaFont = await pdfDoc.embedFont("Helvetica");
+    
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const { width, height } = page.getSize();
+      
+      let pageNumText = "";
+      const pageNum = i + 1;
+      
+      if (format === "numeric") {
+        pageNumText = String(pageNum);
+      } else if (format === "Roman") {
+        pageNumText = toRoman(pageNum);
+      } else if (format === "letter") {
+        pageNumText = toLetter(pageNum);
+      }
+      
+      page.drawText(pageNumText, {
+        x: width / 2 - 10,
+        y: 20,
+        size: fontSize,
+        font: helveticaFont,
+        color: rgb(0, 0, 0),
+      });
+    }
+    
+    const saved = await pdfDoc.save();
+    setDownloadUrl(makeBlobUrl(saved));
+    setStatus("done");
+  };
+  
+  const toRoman = (num: number): string => {
+    const romanNumerals: [string, number][] = [
+      ["M", 1000], ["CM", 900], ["D", 500], ["CD", 400],
+      ["C", 100], ["XC", 90], ["L", 50], ["XL", 40],
+      ["X", 10], ["IX", 9], ["V", 5], ["IV", 4], ["I", 1]
+    ];
+    let result = "";
+    let n = num;
+    for (const [letter, value] of romanNumerals) {
+      while (n >= value) {
+        result += letter;
+        n -= value;
+      }
+    }
+    return result;
+  };
+  
+  const toLetter = (num: number): string => {
+    let result = "";
+    let n = num;
+    while (n > 0) {
+      n--;
+      result = String.fromCharCode(65 + (n % 26)) + result;
+      n = Math.floor(n / 26);
+    }
+    return result;
   };
 
   /* ================= HELPERS ================= */
@@ -247,6 +356,27 @@ if (status === "processing")
             Download PDF
           </button>
         )}
+
+        {toolId === "pdf-compress" &&
+  originalSize &&
+  compressedSize && (
+    <div className="mt-6 p-4 bg-gray-100 rounded-lg text-sm">
+      <p>
+        Original Size: {(originalSize / (1024 * 1024)).toFixed(2)} MB
+      </p>
+      <p>
+        Compressed Size: {(compressedSize / (1024 * 1024)).toFixed(2)} MB
+      </p>
+      <p className="font-semibold text-green-600">
+        Reduced by {(
+          ((originalSize - compressedSize) / originalSize) *
+          100
+        ).toFixed(1)}
+        %
+      </p>
+    </div>
+  )}
+
 
         {toolId === "ocr" && (
           <button
