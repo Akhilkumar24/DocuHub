@@ -228,27 +228,24 @@ pnpm run preview
 ```
 ---
 
-## 🏗️ Architecture
+## 🏗 Architecture Overview
 
-### Core Principles
+DocuHub follows a modular client-side architecture:
 
-1. **Privacy First** – No data leaves the browser
-2. **Offline Capable** – Full functionality without internet
-3. **Performance** – WebAssembly for heavy lifting
-4. **Modularity** – Clear separation of concerns
-5. **Type Safety** – Strict TypeScript throughout
+### Frontend Layer
+- Next.js App Router
+- TailwindCSS
+- TypeScript (strict mode)
 
-### WebAssembly Engines
+### Processing Layer
+- WebAssembly engines
+- Web Workers for heavy computation
+- IndexedDB for persistence
 
-DocuHub leverages three WASM engines:
-
-- **pdf-engine** – PDF manipulation (based on pdf-lib + PDF.js)
-- **image-engine** – Image processing (Sharp compiled to WASM)
-- **ocr-engine** – Text recognition (Tesseract.js)
-
-All engines run in Web Workers to keep the UI responsive.
-
----
+### Rendering Layer
+- PDF.js for PDF preview
+- Canvas-based rendering
+- Lazy-loaded workers
 
 ## 🤝 Contributing
 
