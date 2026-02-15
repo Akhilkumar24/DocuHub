@@ -37,12 +37,10 @@ export default function ToolUploadPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasUnsavedWork, setHasUnsavedWork] = useState(false);
 
-  /* Watermark */
   const [watermarkText, setWatermarkText] = useState("");
   const [rotationAngle, setRotationAngle] = useState(45);
   const [opacity, setOpacity] = useState(40);
 
-  /* Page Numbers */
   const [pageNumberFormat, setPageNumberFormat] = useState("numeric");
   const [pageNumberFontSize, setPageNumberFontSize] = useState(14);
 
@@ -54,14 +52,12 @@ export default function ToolUploadPage() {
     type: string;
   } | null>(null);
 
-  /* Load saved state */
   useEffect(() => {
     if (!toolId) return;
     const stored = loadToolState(toolId);
     if (stored?.fileMeta) setPersistedFileMeta(stored.fileMeta);
   }, [toolId]);
 
-  /* Save state */
   useEffect(() => {
     if (!toolId || !selectedFiles.length) return;
 
@@ -76,7 +72,6 @@ export default function ToolUploadPage() {
     });
   }, [toolId, selectedFiles]);
 
-  /* Leave warning */
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
       if (!hasUnsavedWork) return;
@@ -88,7 +83,6 @@ export default function ToolUploadPage() {
     return () => window.removeEventListener("beforeunload", handler);
   }, [hasUnsavedWork]);
 
-  /* Supported types */
   const getSupportedTypes = () => {
     switch (toolId) {
       case "ocr":
@@ -113,7 +107,6 @@ export default function ToolUploadPage() {
     }
   };
 
-  /* File icon */
   const getFileIcon = (file: File) => {
     const ext = file.name.split(".").pop()?.toLowerCase();
 
@@ -126,7 +119,6 @@ export default function ToolUploadPage() {
     return <FileText className="w-6 h-6 text-gray-400" />;
   };
 
-  /* File select */
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     clearStoredFiles();
 
@@ -157,17 +149,14 @@ export default function ToolUploadPage() {
     setHasUnsavedWork(true);
   };
 
-  /* Remove file */
   const handleRemoveFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  /* Replace */
   const handleReplaceFile = () => {
     fileInputRef.current?.click();
   };
 
-  /* Process */
   const handleProcessFile = async () => {
     if (!selectedFiles.length) return;
 
@@ -209,7 +198,6 @@ export default function ToolUploadPage() {
     }
   };
 
-  /* Back */
   const handleBackNavigation = () => {
     if (hasUnsavedWork) {
       const confirmLeave = window.confirm(
@@ -220,7 +208,6 @@ export default function ToolUploadPage() {
     router.push("/dashboard");
   };
 
-  /* PDF tools page */
   if (toolId === "pdf-tools") {
     return (
       <div className="min-h-screen flex flex-col">
@@ -238,7 +225,6 @@ export default function ToolUploadPage() {
     );
   }
 
-  /* UI */
   return (
     <div className="min-h-screen flex flex-col">
       <main className="container mx-auto px-6 py-12 md:px-12">
@@ -286,7 +272,6 @@ export default function ToolUploadPage() {
           />
         </motion.div>
 
-        {/* File list */}
         {selectedFiles.length > 0 && (
           <div className="mt-6 space-y-3">
             {selectedFiles.map((file, index) => (
@@ -304,69 +289,24 @@ export default function ToolUploadPage() {
                 </div>
 
                 <button
+                  onClick={handleReplaceFile}
+                  className="text-sm text-blue-600 hover:underline mr-3"
+                >
+                  Replace
+                </button>
+
+                <button
                   onClick={() => handleRemoveFile(index)}
                   className="text-sm text-red-600 hover:underline"
                 >
                   Remove
                 </button>
+
               </div>
             ))}
           </div>
         )}
 
-        {/* Watermark */}
-        {toolId === "pdf-watermark" && (
-          <div className="mt-6">
-            <label className="block text-sm font-medium mb-2">
-              Watermark Text
-            </label>
-
-            <input
-              type="text"
-              value={watermarkText}
-              onChange={e => setWatermarkText(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-        )}
-
-        {/* Page Numbers */}
-        {toolId === "pdf-page-numbers" && (
-          <>
-            <div className="mt-6">
-              <label className="block text-sm font-medium mb-2">
-                Page Number Format
-              </label>
-
-              <select
-                value={pageNumberFormat}
-                onChange={e => setPageNumberFormat(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg"
-              >
-                <option value="numeric">1,2,3</option>
-                <option value="roman">i,ii,iii</option>
-                <option value="alphabet">A,B,C</option>
-              </select>
-            </div>
-
-            <div className="mt-6">
-              <label className="block text-sm font-medium mb-2">
-                Font Size ({pageNumberFontSize}px)
-              </label>
-
-              <input
-                type="range"
-                min={8}
-                max={48}
-                value={pageNumberFontSize}
-                onChange={e => setPageNumberFontSize(Number(e.target.value))}
-                className="w-full"
-              />
-            </div>
-          </>
-        )}
-
-        {/* Button */}
         <button
           onClick={handleProcessFile}
           disabled={!selectedFiles.length || isProcessing}
