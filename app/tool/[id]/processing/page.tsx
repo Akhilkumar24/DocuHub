@@ -81,6 +81,9 @@ export default function ProcessingPage() {
 
   /* ================= COMPRESS ================= */
   const startCompressFlow = async (files: StoredFile[]) => {
+    const [originalSize, setOriginalSize] = useState<number | null>(null);
+const [compressedSize, setCompressedSize] = useState<number | null>(null);
+
     setProgress(20);
 
     const targetSize = localStorage.getItem("targetSize") || "1MB";
