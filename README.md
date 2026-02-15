@@ -322,6 +322,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ---
 
+## 🛠 Adding a New Tool
+
+1. Register tool in `tools.config.ts`
+2. Create tool page in `app/tool/[id]/`
+3. Implement processing logic in `lib/`
+4. Add UI using existing components
+5. Test locally
+
 ## 🎥 Demo
 
 Here are some screenshots showing DocuHub in action — all processing happens locally in your browser.
