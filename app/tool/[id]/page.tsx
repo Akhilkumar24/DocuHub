@@ -13,6 +13,7 @@ import { PDF_TOOLS } from "@/lib/pdfTools";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { clearStoredFiles } from "@/lib/fileStore";
 
 import { storeFile } from "@/lib/fileStore";
 import {
@@ -31,17 +32,14 @@ export default function ToolUploadPage() {
     ? params.id[0]
     : (params.id as string);
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasUnsavedWork, setHasUnsavedWork] = useState(false);
 
-  /* ✅ NEW — Watermark States */
   const [watermarkText, setWatermarkText] = useState("");
   const [rotationAngle, setRotationAngle] = useState(45);
-
-  /* ✅ NEW — Watermark Opacity State */
   const [opacity, setOpacity] = useState(40);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -58,17 +56,20 @@ export default function ToolUploadPage() {
     if (stored?.fileMeta) setPersistedFileMeta(stored.fileMeta);
   }, [toolId]);
 
-  useEffect(() => {
-    if (!toolId || !selectedFile) return;
+ useEffect(() => {
+  if (!toolId || !selectedFiles.length) return;
 
-    saveToolState(toolId, {
-      fileMeta: {
-        name: selectedFile.name,
-        size: selectedFile.size,
-        type: selectedFile.type,
-      },
-    });
-  }, [toolId, selectedFile]);
+  const file = selectedFiles[0];
+
+  saveToolState(toolId, {
+    fileMeta: {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    },
+  });
+}, [toolId, selectedFiles]);
+
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -90,7 +91,7 @@ export default function ToolUploadPage() {
       case "pdf-split":
       case "pdf-protect":
       case "pdf-compress":
-      case "pdf-watermark": // ✅ NEW
+      case "pdf-watermark":
         return [".pdf"];
       default:
         return [];
@@ -111,27 +112,37 @@ export default function ToolUploadPage() {
     return <FileText className="w-6 h-6 text-gray-400" />;
   };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
 
-    const allowed = getSupportedTypes();
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  clearStoredFiles(); // ← ADD THIS
+
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+
+  const allowed = getSupportedTypes();
+  const validFiles: File[] = [];
+
+  for (const file of files) {
     const ext = "." + file.name.split(".").pop()?.toLowerCase();
 
     if (allowed.length && !allowed.includes(ext)) {
-      setFileError(`Unsupported file type. Allowed: ${allowed.join(", ")}`);
+      setFileError(`Unsupported file type: ${file.name}`);
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setFileError("File too large. Max size is 10MB.");
+      setFileError(`File too large: ${file.name}`);
       return;
     }
 
-    setFileError(null);
-    setSelectedFile(file);
-    setHasUnsavedWork(true);
-  };
+    validFiles.push(file);
+  }
+
+  setFileError(null);
+  setSelectedFiles(validFiles);
+  setHasUnsavedWork(true);
+};
+
 
   const handleRemoveFile = () => {
     const confirmed = window.confirm(
@@ -139,7 +150,8 @@ export default function ToolUploadPage() {
     );
     if (!confirmed) return;
 
-    setSelectedFile(null);
+    setSelectedFiles([]);
+
     setPersistedFileMeta(null);
     setFileError(null);
     clearToolState(toolId);
@@ -153,20 +165,25 @@ export default function ToolUploadPage() {
   };
 
   const handleProcessFile = async () => {
-    if (!selectedFile) return;
+    if (!selectedFiles.length) return;
 
     setIsProcessing(true);
 
     try {
-      const ok = await storeFile(selectedFile);
+      let ok = true;
+for (const file of selectedFiles) {
+  const res = await storeFile(file);
+  if (!res) {
+    ok = false;
+    break;
+  }
+}
 
       if (ok) {
         if (toolId === "pdf-watermark") {
           localStorage.setItem("watermarkRotation", rotationAngle.toString());
-        /* ✅ Save watermark text for later processing */
-        if (toolId === "pdf-watermark") {
           localStorage.setItem("watermarkText", watermarkText);
-          localStorage.setItem("watermarkOpacity", opacity.toString()); // ✅ NEW
+          localStorage.setItem("watermarkOpacity", opacity.toString());
         }
 
         clearToolState(toolId);
@@ -248,35 +265,44 @@ export default function ToolUploadPage() {
           </p>
           <input
             ref={fileInputRef}
-            type="file"
+           type="file" multiple
+
             className="hidden"
             accept={getSupportedTypes().join(",")}
             onChange={handleFile}
           />
         </motion.div>
 
-        {selectedFile && (
-          <div className="mt-6 flex items-center gap-3 p-4 rounded-xl border bg-white shadow-sm hover:bg-gray-50 hover:border-gray-300">
-            {getFileIcon(selectedFile)}
+       {selectedFiles.length > 0 && (
+  <div className="mt-6 space-y-3">
+    {selectedFiles.map((file, index) => (
+      <div
+        key={index}
+        className="flex items-center gap-3 p-4 rounded-xl border bg-white shadow-sm hover:bg-gray-50 hover:border-gray-300"
+      >
+        {getFileIcon(file)}
 
-            <div className="flex-1">
-              <p className="font-medium">{selectedFile.name}</p>
-              <p className="text-sm text-gray-500">
-                {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            </div>
+        <div className="flex-1">
+          <p className="font-medium">{file.name}</p>
+          <p className="text-sm text-gray-500">
+            {(file.size / 1024 / 1024).toFixed(2)} MB
+          </p>
+        </div>
 
-            <button onClick={handleReplaceFile} className="text-sm text-blue-600 hover:underline">
-              Replace
-            </button>
+        <button
+          onClick={() =>
+            setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+          }
+          className="text-sm text-red-600 hover:underline"
+        >
+          Remove
+        </button>
+      </div>
+    ))}
+  </div>
+)}
 
-            <button onClick={handleRemoveFile} className="text-sm text-red-600 hover:underline">
-              Remove
-            </button>
-          </div>
-        )}
 
-        {/* ✅ NEW — Watermark Input UI */}
         {toolId === "pdf-watermark" && (
           <div className="mt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -287,59 +313,19 @@ export default function ToolUploadPage() {
               type="text"
               value={watermarkText}
               onChange={(e) => setWatermarkText(e.target.value)}
-              placeholder="Enter watermark text (e.g., Confidential)"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Enter watermark text"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
             />
-          </div>
-        )}
-
-        {/* Rotation */}
-        {toolId === "pdf-watermark" && (
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Watermark Rotation
-            </label>
-            <select
-              value={rotationAngle}
-              onChange={(e) => setRotationAngle(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value={0}>0°</option>
-              <option value={45}>45°</option>
-              <option value={90}>90°</option>
-            </select>
-          </div>
-        )}
-
-        {/* ✅ NEW — Opacity Slider */}
-        {toolId === "pdf-watermark" && (
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Watermark Opacity ({opacity}%)
-            </label>
-
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={opacity}
-              onChange={(e) => setOpacity(Number(e.target.value))}
-              className="w-full"
-            />
-
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>0%</span>
-              <span>100%</span>
-            </div>
           </div>
         )}
 
         <button
           onClick={handleProcessFile}
-          disabled={!selectedFile || isProcessing}
+          disabled={!selectedFiles.length || isProcessing}
           className={`mt-8 w-full py-3 rounded-lg text-sm font-medium transition
             ${
-              selectedFile && !isProcessing
+              selectedFiles.length && !isProcessing
+
                 ? "bg-black text-white hover:bg-gray-800"
                 : "bg-gray-300 text-gray-500 cursor-not-allowed"
             }`}
