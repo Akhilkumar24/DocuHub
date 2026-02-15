@@ -138,10 +138,6 @@ Unapproved pull requests may be closed to maintain code quality.
 ### 🔐 Privacy & Security
 
 ## Privacy Model
-
-- No server-side APIs
-- No file uploads
-- No telemetry or tracking
 - All processing inside Web Workers
 - Memory cleared after processing
 - IndexedDB storage fully user-controlled
